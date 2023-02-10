@@ -4,14 +4,14 @@ Core Data多线程调用（增删改查）demo
 # 多线程调用方式
 在CoreData中MOC(NSManageObjectContext)不是线程安全的，苹果给出了自己的解决方案。
 在创建的MOC中使用多线程，无论是私有队列还是主队列，都应该采用下面两种多线程的使用方式，而不是自己手动创建线程。调用下面方法后，系统内部会将任务派发到不同的队列中执行。可以在不同的线程中调用MOC的这两个方法，这个是允许的。
-···
+```
 - (void)performBlock:(void (^)())block            异步执行的block，调用之后会立刻返回。
 - (void)performBlockAndWait:(void (^)())block     同步执行的block，调用之后会等待这个任务完成，才会继续向下执行。
 在多线程的环境下执行MOC的save方法，就是将save方法放在MOC的block体中异步执行，其他方法的调用也是一样的。
 [context performBlock:^{
     [context save:nil];
 }];
-···
+```
 ## 多线程的使用
 ### iOS5之前使用多个MOC
 在iOS5之前实现MOC的多线程，可以创建多个MOC，多个MOC使用同一个PSC(NSPersistentStoreCoordinator)，并让多个MOC实现数据同步。通过这种方式不用担心PSC在调用过程中的线程问题，MOC在使用PSC进行save操作时，会对PSC进行加锁，等当前加锁的MOC执行完操作之后，其他MOC才能继续执行操作。
