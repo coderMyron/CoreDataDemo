@@ -103,36 +103,36 @@ typedef void (^RootContextSave)(void);
     return PSC;
 }
 
-//这是appDelegate中的backgroundContext
--(NSManagedObjectContext *)rootObjectContext {
-    if (nil != _rootObjectContext) {
-        return _rootObjectContext;
+//这是backgroundContext
+-(NSManagedObjectContext *)backgroundContext {
+    if (nil != _backgroundContext) {
+        return _backgroundContext;
     }
      
     NSPersistentStoreCoordinator *coordinator = [self persistentStoreCoordinator];
     if (coordinator != nil) {
-        _rootObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
-        [_rootObjectContext setPersistentStoreCoordinator:coordinator];
+        _backgroundContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
+        [_backgroundContext setPersistentStoreCoordinator:coordinator];
     }
-    return _rootObjectContext;
+    return _backgroundContext;
 }
 
 //这是mainContext
--(NSManagedObjectContext *)managedObjectContext {
-    if (nil != _managedObjectContext) {
-            return _managedObjectContext;
+-(NSManagedObjectContext *)mainContext {
+    if (nil != _mainContext) {
+            return _mainContext;
         }
          
-        _managedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
-        _managedObjectContext.parentContext = [self rootObjectContext];
-        return _managedObjectContext;
+        _mainContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
+        _mainContext.parentContext = [self backgroundContext];
+        return _mainContext;
 }
 
-//AppDelegate中saveContext方法，每次privateContext调用save方法成功之后都要call这个方法
+//AppDelegate中saveContext方法，每次privateContext调用save方法成功之后都要调用这个方法
 - (void)saveContextWithWait:(BOOL)needWait
 {
-    NSManagedObjectContext *managedObjectContext = [self managedObjectContext];
-    NSManagedObjectContext *rootObjectContext = [self rootObjectContext];
+    NSManagedObjectContext *managedObjectContext = [self mainContext];
+    NSManagedObjectContext *rootObjectContext = [self backgroundContext];
      
     if (nil == managedObjectContext) {
         return;
@@ -153,7 +153,7 @@ typedef void (^RootContextSave)(void);
      
     RootContextSave rootContextSave = ^ {
         NSError *error = nil;
-        if (![self->_rootObjectContext save:&error]) {
+        if (![self->_backgroundContext save:&error]) {
             NSLog(@"Save root context failed and error is %@", error);
         }
     };

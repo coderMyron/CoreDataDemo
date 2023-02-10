@@ -31,7 +31,7 @@ static MYCoreDataTools *instance;
 - (NSManagedObjectContext *)mainContext {
     if(_mainContext == nil){
         AppDelegate *appDelegate = (AppDelegate *)[UIApplication sharedApplication].delegate;
-        _mainContext = appDelegate.managedObjectContext;
+        _mainContext = appDelegate.mainContext;
     }
     return _mainContext;
 }
