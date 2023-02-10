@@ -16,7 +16,7 @@ Core Data多线程调用（增删改查）demo
 ### iOS5之前使用多个MOC
 在iOS5之前实现MOC的多线程，可以创建多个MOC，多个MOC使用同一个PSC(NSPersistentStoreCoordinator)，并让多个MOC实现数据同步。通过这种方式不用担心PSC在调用过程中的线程问题，MOC在使用PSC进行save操作时，会对PSC进行加锁，等当前加锁的MOC执行完操作之后，其他MOC才能继续执行操作。
 在MOC发生改变时，将其他MOC数据更新
-···
+```
 // 获取PSC实例对象
 - (NSPersistentStoreCoordinator *)persistentStoreCoordinator {
 
@@ -63,11 +63,11 @@ Core Data多线程调用（增删改查）demo
     	[MOC mergeChangesFromContextDidSaveNotification:noti];
 	}];
 }
-···
+```
 ### iOS5之后使用多个MOC
 在iOS5之后，MOC可以设置parentContext，一个parentContext可以拥有多个ChildContext。在ChildContext执行save操作后，会将操作push到parentContext，由parentContext去完成真正的save操作，而ChildContext所有的改变都会被parentContext所知晓，这解决了之前MOC手动同步数据的问题。
 需要注意的是，在ChildContext调用save方法之后，此时并没有将数据写入存储区，还需要调用parentContext的save方法。因为ChildContext并不拥有PSC，ChildContext也不需要设置PSC，所以需要parentContext调用PSC来执行真正的save操作。也就是只有拥有PSC的MOC执行save操作后，才是真正的执行了写入存储区的操作。
-···
+```
 - (void)createManagedObjectContext {
 	// 创建PSC实例对象，还是用上面Demo的实例化代码
 	NSPersistentStoreCoordinator *PSC = self.persistentStoreCoordinator;
@@ -90,17 +90,18 @@ Core Data多线程调用（增删改查）demo
     		}];
 	}];
 }
-···
+```
 demo是用到三个MOC,persistentStoreCoordinator<-backgroundContext<-mainContext<-privateContext
 这种设计是第一种的改进设计，也是上述的老外博主推荐的一种设计方式。它总共有三个Context，一是连接persistentStoreCoordinator也是最底层的backgroundContext，二是UI线程的mainContext，三是子线程的privateContext，他们的关系是privateContext.parentContext = mainContext, mainContext.parentContext = backgroundContext。
 ## 线程安全
 托管对象是不能直接传递到其他MOC的线程的，但是可以通过获取NSManagedObject的NSManagedObjectID对象，在其他MOC中通过NSManagedObjectID对象，从持久化存储区中获取NSManagedObject对象，这样就是允许的。NSManagedObjectID是线程安全，并且可以跨线程使用的。
 可以通过MOC获取NSManagedObjectID对应的NSManagedObject对象
-···
+```
 NSManagedObject *object = [context objectRegisteredForID:objectID];
 NSManagedObject *object = [context objectWithID:objectID];
-···
+```
 通过NSManagedObject对象的objectID属性，获取NSManagedObjectID类型的objectID对象。
-···
+```
 NSManagedObjectID *objectID = object.objectID;
-···
+```
+
